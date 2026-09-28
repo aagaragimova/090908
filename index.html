@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<style>
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+    background:transparent;
+}
+
+#game{
+    position:relative;
+    width:100%;
+    height:100vh;
+    overflow:hidden;
+    background:transparent;
+}
+
+.popcorn{
+    position:absolute;
+    cursor:pointer;
+    background-image:url("https://i.ibb.co/Vpws63Gv/17.png");
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    transition:transform .25s,opacity .25s;
+    z-index:5;
+}
+
+.popcorn:hover{
+    transform:scale(1.12);
+}
+
+#questionBox{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:min(650px,85vw);
+    background:#d40000;
+    border:5px solid #650000;
+    border-radius:20px;
+    padding:22px;
+    display:none;
+    z-index:1000;
+    color:white;
+    text-align:center;
+    box-shadow:0 8px 0 #450000,0 0 25px rgba(0,0,0,.4);
+}
+
+h2{margin-top:0}
+
+#answerArea{
+    min-height:55px;
+    background:#850000;
+    border-radius:12px;
+    padding:10px;
+    margin:15px 0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px;
+}
+
+.selectedWord{
+    background:white;
+    color:#8b0000;
+    padding:8px 11px;
+    border-radius:9px;
+    font-size:17px;
+    font-weight:bold;
+}
+
+#words{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:8px;
+}
+
+.word{
+    background:white;
+    color:#8b0000;
+    border:none;
+    border-radius:10px;
+    padding:10px 14px;
+    font-size:17px;
+    font-weight:bold;
+    cursor:pointer;
+    box-shadow:0 3px 0 #aaa;
+}
+
+.word:hover{transform:scale(1.04)}
+
+.word.used{
+    opacity:.3;
+    cursor:default;
+}
+
+button{
+    border:none;
+    border-radius:10px;
+    padding:10px 15px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    margin:4px;
+}
+
+#check{
+    background:white;
+    color:#8b0000;
+}
+
+#clear{
+    background:#650000;
+    color:white;
+}
+
+#next{
+    display:none;
+    background:#ffd21c;
+    color:#650000;
+}
+
+#close{
+    background:#650000;
+    color:white;
+}
+
+#feedback{
+    min-height:24px;
+    margin-top:10px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+#counter{
+    margin-top:8px;
+    font-size:15px;
+}
+
+#win{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:#d40000;
+    border:5px solid #650000;
+    border-radius:20px;
+    padding:25px;
+    color:white;
+    text-align:center;
+    display:none;
+    z-index:2000;
+    box-shadow:0 8px 0 #450000;
+}
+
+#win button{
+    background:white;
+    color:#8b0000;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+    <div id="questionBox">
+
+        <h2>🍿 Present Simple</h2>
+
+        <div>Put the words in the correct order!</div>
+
+        <div id="answerArea"></div>
+
+        <div id="words"></div>
+
+        <div id="feedback"></div>
+
+        <div>
+            <button id="check" onclick="checkAnswer()">✓ Check</button>
+            <button id="clear" onclick="clearAnswer()">↩ Clear</button>
+            <button id="next" onclick="nextQuestion()">Next →</button>
+            <button id="close" onclick="closeQuestion()">✕ Close</button>
+        </div>
+
+        <div id="counter"></div>
+
+    </div>
+
+    <div id="win">
+        <h2>🎉 You Win!</h2>
+        <p>You completed all 10 sentences!</p>
+        <button onclick="restartGame()">🍿 Start Again</button>
+    </div>
+
+</div>
+
+<script>
+
+const questions = [
+
+    {
+        words:["I","play","tennis","every","Saturday."],
+        answer:"I play tennis every Saturday."
+    },
+
+    {
+        words:["She","likes","chocolate."],
+        answer:"She likes chocolate."
+    },
+
+    {
+        words:["They","go","to","school","every","day."],
+        answer:"They go to school every day."
+    },
+
+    {
+        words:["He","watches","TV","in","the","evening."],
+        answer:"He watches TV in the evening."
+    },
+
+    {
+        words:["We","have","breakfast","at","seven","o'clock."],
+        answer:"We have breakfast at seven o'clock."
+    },
+
+    {
+        words:["My","cat","likes","fish."],
+        answer:"My cat likes fish."
+    },
+
+    {
+        words:["Anna","doesn't","eat","meat."],
+        answer:"Anna doesn't eat meat."
+    },
+
+    {
+        words:["Do","you","like","English?"],
+        answer:"Do you like English?"
+    },
+
+    {
+        words:["Tom","doesn't","play","football."],
+        answer:"Tom doesn't play football."
+    },
+
+    {
+        words:["Does","your","brother","ride","a","bike?"],
+        answer:"Does your brother ride a bike?"
+    }
+
+];
+
+const game=document.getElementById("game");
+const questionBox=document.getElementById("questionBox");
+const answerArea=document.getElementById("answerArea");
+const wordsBox=document.getElementById("words");
+const feedback=document.getElementById("feedback");
+const counter=document.getElementById("counter");
+const nextButton=document.getElementById("next");
+
+let popcorns=[];
+let currentQuestion=0;
+let selectedWords=[];
+let answered=false;
+
+
+/* РОВНО 10 ЛЕТАЮЩИХ ПОПКОРНОВ */
+function createPopcorns(){
+
+    popcorns=[];
+
+    for(let i=0;i<10;i++){
+
+        const popcorn=document.createElement("div");
+
+        popcorn.className="popcorn";
+
+        const size=80+Math.random()*40;
+
+        popcorn.style.width=size+"px";
+        popcorn.style.height=size+"px";
+
+        popcorn.x=Math.random()*(window.innerWidth-size);
+        popcorn.y=Math.random()*(window.innerHeight-size);
+
+        popcorn.vx=(Math.random()-.5)*3;
+        popcorn.vy=(Math.random()-.5)*3;
+
+        popcorn.style.left=popcorn.x+"px";
+        popcorn.style.top=popcorn.y+"px";
+
+        popcorn.onclick=()=>{
+            popPopcorn(popcorn);
+        };
+
+        game.appendChild(popcorn);
+        popcorns.push(popcorn);
+    }
+}
+
+
+function popPopcorn(popcorn){
+
+    if(questionBox.style.display==="block") return;
+
+    popcorn.style.opacity="0";
+    popcorn.style.transform="scale(0)";
+
+    setTimeout(()=>{
+
+        popcorn.remove();
+
+        popcorns=popcorns.filter(
+            p=>p!==popcorn
+        );
+
+        showQuestion();
+
+    },250);
+}
+
+
+function showQuestion(){
+
+    const question=questions[currentQuestion];
+
+    selectedWords=[];
+    answered=false;
+
+    feedback.innerText="";
+    answerArea.innerHTML="";
+    wordsBox.innerHTML="";
+    nextButton.style.display="none";
+
+    counter.innerText=
+        "Question "+(currentQuestion+1)+" / 10";
+
+    let shuffled=[...question.words];
+
+    shuffled.sort(
+        ()=>Math.random()-.5
+    );
+
+    shuffled.forEach(word=>{
+
+        const button=document.createElement("button");
+
+        button.className="word";
+        button.innerText=word;
+
+        button.onclick=()=>{
+
+            if(
+                button.classList.contains("used") ||
+                answered
+            ) return;
+
+            button.classList.add("used");
+
+            selectedWords.push({
+                word:word,
+                element:button
+            });
+
+            updateAnswer();
+        };
+
+        wordsBox.appendChild(button);
+    });
+
+    questionBox.style.display="block";
+}
+
+
+function updateAnswer(){
+
+    answerArea.innerHTML="";
+
+    selectedWords.forEach(item=>{
+
+        const span=document.createElement("span");
+
+        span.className="selectedWord";
+        span.innerText=item.word;
+
+        answerArea.appendChild(span);
+    });
+}
+
+
+function clearAnswer(){
+
+    if(answered) return;
+
+    selectedWords.forEach(item=>{
+        item.element.classList.remove("used");
+    });
+
+    selectedWords=[];
+
+    answerArea.innerHTML="";
+    feedback.innerText="";
+}
+
+
+function checkAnswer(){
+
+    if(answered) return;
+
+    const userAnswer=
+        selectedWords
+        .map(item=>item.word)
+        .join(" ");
+
+    const correctAnswer=
+        questions[currentQuestion].answer;
+
+    if(userAnswer===correctAnswer){
+
+        answered=true;
+
+        feedback.innerText="🎉 Correct!";
+
+        nextButton.style.display="inline-block";
+
+    }else{
+
+        feedback.innerText="❌ Try again!";
+    }
+}
+
+
+function nextQuestion(){
+
+    currentQuestion++;
+
+    if(currentQuestion>=questions.length){
+
+        showWin();
+
+    }else{
+
+        questionBox.style.display="none";
+    }
+}
+
+
+function closeQuestion(){
+
+    questionBox.style.display="none";
+
+    selectedWords=[];
+    answered=false;
+}
+
+
+function showWin(){
+
+    questionBox.style.display="none";
+
+    document.getElementById("win")
+        .style.display="block";
+}
+
+
+function restartGame(){
+
+    document
+        .querySelectorAll(".popcorn")
+        .forEach(p=>p.remove());
+
+    popcorns=[];
+
+    document.getElementById("win")
+        .style.display="none";
+
+    questionBox.style.display="none";
+
+    currentQuestion=0;
+    selectedWords=[];
+    answered=false;
+
+    createPopcorns();
+}
+
+
+function animate(){
+
+    popcorns.forEach(popcorn=>{
+
+        popcorn.x+=popcorn.vx;
+        popcorn.y+=popcorn.vy;
+
+        const width=popcorn.offsetWidth;
+        const height=popcorn.offsetHeight;
+
+        if(
+            popcorn.x<=0 ||
+            popcorn.x>=window.innerWidth-width
+        ){
+            popcorn.vx*=-1;
+        }
+
+        if(
+            popcorn.y<=0 ||
+            popcorn.y>=window.innerHeight-height
+        ){
+            popcorn.vy*=-1;
+        }
+
+        popcorn.style.left=popcorn.x+"px";
+        popcorn.style.top=popcorn.y+"px";
+    });
+
+    requestAnimationFrame(animate);
+}
+
+
+createPopcorns();
+animate();
+
+</script>
+
+</body>
+</html>
